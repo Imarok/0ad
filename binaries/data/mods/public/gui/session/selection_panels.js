@@ -729,20 +729,22 @@ g_SelectionPanels.Research = {
 	},
 	"getItems": function(unitEntStates)
 	{
+		let ret = [];
 		// Tech-pairs require two rows. Thus only show techs when there is only one row in use.
-		// TODO Use a reference instead of a magic number
-		if (getNumberOfRightPanelButtons() > 8 && unitEntStates.length > 1)
-			return [];
+		if (getNumberOfRightPanelButtons() > this.getMaxNumberOfItems() && unitEntStates.length > 1)
+			return ret;
 
 		for (let state of unitEntStates)
 		{
-			if (state.production && state.production.technologies.length)
-				return state.production.technologies.map(tech => ({
+			if (state.production && state.production.technologies.some(tech => tech != null) &&
+			    state.production.technologies.length + ret.length <= this.getMaxNumberOfItems())
+				ret = ret.concat(state.production.technologies.map(tech => ({
 					"tech": tech,
-					"techCostMultiplier": state.production.techCostMultiplier
-				}));
+					"techCostMultiplier": state.production.techCostMultiplier,
+					"researchFacilityId": state.id
+				})));
 		}
-		return [];
+		return ret;
 	},
 	"hideItem": function(i, rowLength) // Called when no item is found
 	{
@@ -751,7 +753,7 @@ g_SelectionPanels.Research = {
 		Engine.GetGUIObjectByName("unitResearchButton[" + (i + rowLength) + "]").hidden = true;
 		Engine.GetGUIObjectByName("unitResearchPair[" + i + "]").hidden = true;
 	},
-	"setupButton": function(data) //TODO
+	"setupButton": function(data)
 	{
 		if (!data.item.tech)
 		{
@@ -772,7 +774,7 @@ g_SelectionPanels.Research = {
 		pair.hidden = data.item.tech.pair == null;
 		setPanelObjectPosition(pair, data.i, data.rowLength);
 
-		// Handle one or two techs
+		// Handle one or two techs (tech pair)
 		for (let i in techs)
 		{
 			let tech = techs[i];
@@ -820,7 +822,7 @@ g_SelectionPanels.Research = {
 			button.tooltip = tooltips.filter(tip => tip).join("\n");
 
 			button.onPress = function () {
-				addResearchToQueue(data.unitEntStates[0].id, tech);
+				addResearchToQueue(data.item.researchFacilityId, tech);
 			};
 
 			if (data.item.tech.pair)
