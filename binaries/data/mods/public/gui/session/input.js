@@ -228,7 +228,7 @@ function getActionInfo(action, target)
 		if (unitActions[action] && unitActions[action].getActionInfo)
 		{
 			var r = unitActions[action].getActionInfo(entState, targetState, simState);
-			if (r) // return true if it's possible for one of the entities
+			if (r && r.possible) // return true if it's possible for one of the entities
 				return r;
 		}
 	}
