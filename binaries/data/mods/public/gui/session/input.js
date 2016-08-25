@@ -1452,20 +1452,21 @@ function addResearchToQueue(entity, researchType)
 	Engine.PostNetworkCommand({ "type": "research", "entity": entity, "template": researchType });
 }
 
-// Returns the number of units that will be present in a batch if the user clicks
-// the training button with shift down
-function getTrainingBatchStatus(playerState, entity, trainEntType, selection)
+/**
+ * Returns the number of units that will be present in a batch if the user clicks
+ * the training button with shift down
+ */
+function getTrainingBatchStatus(playerState, trainEntType, selection)
 {
 	let batchIncrementSize = +Engine.ConfigDB_GetValue("user", "gui.session.batchtrainingsize");
-	var appropriateBuildings = [entity];
-	if (selection && selection.indexOf(entity) != -1)
+	var appropriateBuildings = [];
+	if (selection)
 		appropriateBuildings = getBuildingsWhichCanTrainEntity(selection, trainEntType);
 	var nextBatchTrainingCount = 0;
 	var currentBatchTrainingCount = 0;
 
 	var limits;
-	if (inputState == INPUT_BATCHTRAINING && batchTrainingEntities.indexOf(entity) != -1 &&
-	    batchTrainingType == trainEntType)
+	if (inputState == INPUT_BATCHTRAINING && batchTrainingType == trainEntType)
 	{
 		nextBatchTrainingCount = batchTrainingCount;
 		currentBatchTrainingCount = batchTrainingCount;
@@ -1507,11 +1508,10 @@ function changePrimarySelectionGroup(templateName, deselectGroup)
 	g_Selection.makePrimarySelection(templateName, Engine.HotkeyIsPressed("session.deselectgroup") || deselectGroup);
 }
 
-function performCommand(entity, commandName)
+function performCommand(entState, commandName)
 {
-	if (!entity)
+	if (!entState)
 		return;
-	var entState = GetExtendedEntityState(entity);
 
 	if (!controlsPlayer(entState.player) &&
 	    !(g_IsObserver && commandName == "focus-rally"))
@@ -1535,12 +1535,12 @@ function performAllyCommand(entity, commandName)
 		g_AllyEntityCommands[commandName].execute(entState);
 }
 
-function performFormation(entity, formationTemplate)
+function performFormation(entities, formationTemplate)
 {
-	if (entity)
+	if (entities)
 		Engine.PostNetworkCommand({
 			"type": "formation",
-			"entities": g_Selection.toList(),
+			"entities": entities,
 			"name": formationTemplate
 		});
 }
@@ -1582,17 +1582,14 @@ function performGroup(action, groupId)
 	}
 }
 
-function performStance(entity, stanceName)
+function performStance(entities, stanceName)
 {
-	if (entity)
-	{
-		var selection = g_Selection.toList();
+	if (entities)
 		Engine.PostNetworkCommand({
 			"type": "stance",
-			"entities": selection,
+			"entities": entities,
 			"name": stanceName
 		});
-	}
 }
 
 function lockGate(lock)
@@ -1849,35 +1846,3 @@ function clearSelection()
 	preSelectedAction = ACTION_NONE;
 }
 
-/**
- * Returns a list of all items in the productionqueue of the selection
- * @param selection List with entity ids
- */
-function getTrainingQueueItems(selection)
-{
-	var entStates = [];
-	for (var ent of selection)
-	{
-		var entState = GetEntityState(ent);
-		if (entState.production)
-			entStates.push(entState);
-	}
-	var queue = [];
-	var i = 0;
-	do
-	{
-		var foundNewItems = false;
-		for (entState of entStates)
-		{
-			if (!entState.production.queue[i])
-				continue;
-			var item = entState.production.queue[i];
-			item.producingEnt = entState.id;
-			queue.push(item);
-			foundNewItems = true;
-		}
-		++i;
-	}
-	while (foundNewItems);
-	return queue;
-}

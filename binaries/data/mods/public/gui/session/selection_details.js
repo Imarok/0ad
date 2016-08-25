@@ -313,7 +313,7 @@ function displaySingle(entState)
 }
 
 // Fills out information for multiple entities
-function displayMultiple(selection)
+function displayMultiple(entStates)
 {
 	let averageHealth = 0;
 	let maxHealth = 0;
@@ -323,11 +323,9 @@ function displayMultiple(selection)
 	let totalCarrying = {};
 	let totalLoot = {};
 
-	for (let i = 0; i < selection.length; ++i)
+	for (let i = 0; i < entStates.length; ++i)
 	{
-		let entState = GetExtendedEntityState(selection[i]);
-		if (!entState)
-			continue;
+		let entState = entStates[i];
 		playerID = entState.player; // trust that all selected entities have the same owner
 		if (entState.hitpoints)
 		{
@@ -403,7 +401,7 @@ function displayMultiple(selection)
 	}
 
 	let numberOfUnits = Engine.GetGUIObjectByName("numberOfUnits");
-	numberOfUnits.caption = selection.length;
+	numberOfUnits.caption = entStates.length;
 	numberOfUnits.tooltip = "";
 
 	if (Object.keys(totalCarrying).length)
@@ -434,9 +432,17 @@ function updateSelectionDetails()
 	let detailsPanel = Engine.GetGUIObjectByName("selectionDetails");
 	let commandsPanel = Engine.GetGUIObjectByName("unitCommands");
 
-	let selection = g_Selection.toList();
+	let entStates = [];//g_Selection.toList().map(sel => GetExtendedEntityState(sel));
 
-	if (selection.length == 0)
+	for (let sel of g_Selection.toList())
+	{
+		let entState = GetExtendedEntityState(sel);
+		if (!entState)
+			continue;
+		entStates.push(entState);
+	}
+
+	if (entStates.length == 0)
 	{
 		Engine.GetGUIObjectByName("detailsAreaMultiple").hidden = true;
 		Engine.GetGUIObjectByName("detailsAreaSingle").hidden = true;
@@ -448,26 +454,19 @@ function updateSelectionDetails()
 		return;
 	}
 
-	/* If the unit has no data (e.g. it was killed), don't try displaying any
-	 data for it. (TODO: it should probably be removed from the selection too;
-	 also need to handle multi-unit selections) */
-	let entState = GetExtendedEntityState(selection[0]);
-	if (!entState)
-		return;
-
 	// Fill out general info and display it
-	if (selection.length == 1)
-		displaySingle(entState);
+	if (entStates.length == 1)
+		displaySingle(entStates[0]);
 	else
-		displayMultiple(selection);
+		displayMultiple(entStates);
 
 	// Show basic details.
 	detailsPanel.hidden = false;
 
 	// Fill out commands panel for specific unit selected (or first unit of primary group)
-	updateUnitCommands(entState, supplementalDetailsPanel, commandsPanel, selection);
+	updateUnitCommands(entStates, supplementalDetailsPanel, commandsPanel);
 
 	// Show health bar for garrisoned units if the garrison panel is visible
 	if (Engine.GetGUIObjectByName("unitGarrisonPanel") && !Engine.GetGUIObjectByName("unitGarrisonPanel").hidden)
-		updateGarrisionHealthBar(entState, selection);
+		updateGarrisionHealthBar(entStates[0], g_Selection.toList());
 }
