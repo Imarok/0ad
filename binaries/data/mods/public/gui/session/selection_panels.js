@@ -738,7 +738,7 @@ g_SelectionPanels.Research = {
 		{
 			if (state.production && state.production.technologies.some(tech => tech != null) &&
 			    state.production.technologies.length + ret.length <= this.getMaxNumberOfItems())
-				ret = ret.concat(state.production.technologies.map(tech => ({
+				ret = ret.concat(state.production.technologies.filter(tech => tech != null || unitEntStates.length == 1).map(tech => ({
 					"tech": tech,
 					"techCostMultiplier": state.production.techCostMultiplier,
 					"researchFacilityId": state.id
