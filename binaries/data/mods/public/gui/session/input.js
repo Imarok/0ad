@@ -1814,10 +1814,22 @@ function removeGuard()
 	Engine.PostNetworkCommand({ "type": "remove-guard", "entities": entities });
 }
 
+function raiseAlert()
+{
+	let entities = g_Selection.toList().filter(e => {
+		let state = GetEntityState(e);
+		return state && state.alertRaiser && !state.alertRaiser.hasRaisedAlert;
+	});
+
+	Engine.PostNetworkCommand({ "type": "increase-alert-level", "entities": entities });
+}
+
 function increaseAlertLevel()
 {
-	var entities = g_Selection.toList().filter(e => {
-		var state = GetEntityState(e);
+	raiseAlert();
+
+	let entities = g_Selection.toList().filter(e => {
+		let state = GetEntityState(e);
 		return state && state.alertRaiser && state.alertRaiser.canIncreaseLevel;
 	});
 
@@ -1826,8 +1838,8 @@ function increaseAlertLevel()
 
 function endOfAlert()
 {
-	var entities = g_Selection.toList().filter(e => {
-		var state = GetEntityState(e);
+	let entities = g_Selection.toList().filter(e => {
+		let state = GetEntityState(e);
 		return state && state.alertRaiser && state.alertRaiser.hasRaisedAlert;
 	});
 

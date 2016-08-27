@@ -36,57 +36,57 @@ let g_SelectionPanels = {};
 g_SelectionPanels.Alert = {
 	"getMaxNumberOfItems": function()
 	{
-		return 2;
+		return 3;
 	},
 	"conflictsWith": ["Barter"],
 	"getItems": function(unitEntStates)
 	{
-		if (unitEntStates.every(state => !state.alertRaiser))
-			return [];
-		return ["increase", "end"];
+		let ret = [];
+
+		if (unitEntStates.some(state => state.alertRaiser && !state.alertRaiser.hasRaisedAlert))
+			ret.push("raise");
+		if (unitEntStates.some(state => state.alertRaiser && state.alertRaiser.hasRaisedAlert && state.alertRaiser.canIncreaseLevel))
+			ret.push("increase");
+		if (unitEntStates.some(state => state.alertRaiser && state.alertRaiser.hasRaisedAlert))
+			ret.push("end");
+
+		return ret;
 	},
-	"setupButton": function(data) //TODO
+	"setupButton": function(data)
 	{
-		let unitEntState;
-		for (let state of data.unitEntStates)
-			if (state.alertRaiser)
-			{
-				unitEntState = state;
-				break;
-			}
 		data.button.onPress = function() {
-			if (data.item == "increase")
-				increaseAlertLevel();
-			else if (data.item == "end")
-				endOfAlert();
+			switch(data.item)
+			{
+				case "raise":
+					raiseAlert();
+					break;
+				case "increase":
+					increaseAlertLevel();
+					break;
+				case "end":
+					endOfAlert();
+					break;
+			}
 		};
 
-		if (data.item == "increase")
+		if (data.item == "raise")
 		{
-			if (unitEntState.alertRaiser.hasRaisedAlert)
-				data.button.tooltip = translate("Increase the alert level to protect more units");
-			else
-				data.button.tooltip = translate("Raise an alert!");
+			data.icon.sprite = "stretched:session/icons/bell_level1.png";
+			data.button.tooltip = translate("Raise an alert!");
+		}
+		else if (data.item == "increase")
+		{
+			data.icon.sprite = "stretched:session/icons/bell_level2.png";
+			data.button.tooltip = translate("Increase the alert level to protect more units");
 		}
 		else if (data.item == "end")
+		{
 			data.button.tooltip = translate("End of alert.");
-
-		if (data.item == "increase")
-		{
-			data.button.hidden = !unitEntState.alertRaiser.canIncreaseLevel;
-			if (unitEntState.alertRaiser.hasRaisedAlert)
-				data.icon.sprite = "stretched:session/icons/bell_level2.png";
-			else
-				data.icon.sprite = "stretched:session/icons/bell_level1.png";
-		}
-		else if (data.item == "end")
-		{
-			data.button.hidden = !unitEntState.alertRaiser.hasRaisedAlert;
 			data.icon.sprite = "stretched:session/icons/bell_level0.png";
 		}
-		data.button.enabled = !data.button.hidden && controlsPlayer(unitEntState.player);
+		data.button.enabled = controlsPlayer(data.player);
 
-		setPanelObjectPosition(data.button, data.i, data.rowLength);
+		setPanelObjectPosition(data.button, this.getMaxNumberOfItems() - data.i - 1, data.rowLength);
 		return true;
 	}
 };
