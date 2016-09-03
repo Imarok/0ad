@@ -730,15 +730,22 @@ g_SelectionPanels.Research = {
 	"getItems": function(unitEntStates)
 	{
 		let ret = [];
-		// Tech-pairs require two rows. Thus only show techs when there is only one row in use.
-		if (getNumberOfRightPanelButtons() > this.getMaxNumberOfItems() && unitEntStates.length > 1)
-			return ret;
+		if (unitEntStates.length == 1)
+			return unitEntStates[0].production.technologies.map(tech => ({
+					"tech": tech,
+					"techCostMultiplier": unitEntStates[0].production.techCostMultiplier,
+					"researchFacilityId": unitEntStates[0].id
+				}));
 
 		for (let state of unitEntStates)
 		{
-			if (state.production && state.production.technologies.some(tech => tech != null) &&
-			    state.production.technologies.length + ret.length <= this.getMaxNumberOfItems())
-				ret = ret.concat(state.production.technologies.filter(tech => tech != null || unitEntStates.length == 1).map(tech => ({
+			let filteredTechs = state.production.technologies.filter(tech => tech != null &&
+				// Remove the techs we already have in ret (with the same name and techCostMultiplier)
+				!ret.some(item => item.tech == tech && JSON.stringify(item.techCostMultiplier) == JSON.stringify(state.production.techCostMultiplier)));
+
+			if (state.production && filteredTechs.length + ret.length <= this.getMaxNumberOfItems() &&
+			    getNumberOfRightPanelButtons() <= this.getMaxNumberOfItems() * (state.production.technologies.some(tech => tech && !!tech.pair) ? 1 : 2))
+				ret = ret.concat(filteredTechs.map(tech => ({
 					"tech": tech,
 					"techCostMultiplier": state.production.techCostMultiplier,
 					"researchFacilityId": state.id
