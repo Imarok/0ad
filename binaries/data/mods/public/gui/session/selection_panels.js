@@ -731,7 +731,7 @@ g_SelectionPanels.Research = {
 	{
 		let ret = [];
 		if (unitEntStates.length == 1)
-			return unitEntStates[0].production.technologies.map(tech => ({
+			return !unitEntStates[0].production || !unitEntStates[0].production.technologies ? ret : unitEntStates[0].production.technologies.map(tech => ({
 					"tech": tech,
 					"techCostMultiplier": unitEntStates[0].production.techCostMultiplier,
 					"researchFacilityId": unitEntStates[0].id
@@ -739,11 +739,13 @@ g_SelectionPanels.Research = {
 
 		for (let state of unitEntStates)
 		{
+			if (!state.production || !state.production.technologies)
+				continue;
 			let filteredTechs = state.production.technologies.filter(tech => tech != null &&
 				// Remove the techs we already have in ret (with the same name and techCostMultiplier)
-				!ret.some(item => item.tech == tech && JSON.stringify(item.techCostMultiplier) == JSON.stringify(state.production.techCostMultiplier)));
+				!ret.some(item => item.tech == tech && Object.keys(item.techCostMultiplier).every(k => item.techCostMultiplier[k] == state.production.techCostMultiplier[k])));
 
-			if (state.production && filteredTechs.length + ret.length <= this.getMaxNumberOfItems() &&
+			if (filteredTechs.length + ret.length <= this.getMaxNumberOfItems() &&
 			    getNumberOfRightPanelButtons() <= this.getMaxNumberOfItems() * (state.production.technologies.some(tech => tech && !!tech.pair) ? 1 : 2))
 				ret = ret.concat(filteredTechs.map(tech => ({
 					"tech": tech,
