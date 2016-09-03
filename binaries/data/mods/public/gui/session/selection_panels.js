@@ -69,20 +69,20 @@ g_SelectionPanels.Alert = {
 			}
 		};
 
-		if (data.item == "raise")
+		switch(data.item)
 		{
-			data.icon.sprite = "stretched:session/icons/bell_level1.png";
-			data.button.tooltip = translate("Raise an alert!");
-		}
-		else if (data.item == "increase")
-		{
-			data.icon.sprite = "stretched:session/icons/bell_level2.png";
-			data.button.tooltip = translate("Increase the alert level to protect more units");
-		}
-		else if (data.item == "end")
-		{
-			data.button.tooltip = translate("End of alert.");
-			data.icon.sprite = "stretched:session/icons/bell_level0.png";
+			case "raise":
+				data.icon.sprite = "stretched:session/icons/bell_level1.png";
+				data.button.tooltip = translate("Raise an alert!");
+				break;
+			case "increase":
+				data.icon.sprite = "stretched:session/icons/bell_level2.png";
+				data.button.tooltip = translate("Increase the alert level to protect more units");
+				break;
+			case "end":
+				data.button.tooltip = translate("End of alert.");
+				data.icon.sprite = "stretched:session/icons/bell_level0.png";
+				break;
 		}
 		data.button.enabled = controlsPlayer(data.player);
 
