@@ -323,9 +323,8 @@ function displayMultiple(entStates)
 	let totalCarrying = {};
 	let totalLoot = {};
 
-	for (let i = 0; i < entStates.length; ++i)
+	for (let entState of entStates)
 	{
-		let entState = entStates[i];
 		playerID = entState.player; // trust that all selected entities have the same owner
 		if (entState.hitpoints)
 		{
