@@ -741,12 +741,15 @@ g_SelectionPanels.Research = {
 		{
 			if (!state.production || !state.production.technologies)
 				continue;
-			let filteredTechs = state.production.technologies.filter(tech => tech != null &&
-				// Remove the techs we already have in ret (with the same name and techCostMultiplier)
-				!ret.some(item => item.tech == tech && Object.keys(item.techCostMultiplier).every(k => item.techCostMultiplier[k] == state.production.techCostMultiplier[k])));
+			// Remove the techs we already have in ret (with the same name and techCostMultiplier)
+			let filteredTechs = state.production.technologies.filter(
+				tech => tech != null && !ret.some(
+					item => item.tech == tech && Object.keys(item.techCostMultiplier).every(
+						k => item.techCostMultiplier[k] == state.production.techCostMultiplier[k]
+			)));
 
 			if (filteredTechs.length + ret.length <= this.getMaxNumberOfItems() &&
-			    getNumberOfRightPanelButtons() <= this.getMaxNumberOfItems() * (state.production.technologies.some(tech => tech && !!tech.pair) ? 1 : 2))
+			    getNumberOfRightPanelButtons() <= this.getMaxNumberOfItems() * (filteredTechs.some(tech => !!tech.pair) ? 1 : 2))
 				ret = ret.concat(filteredTechs.map(tech => ({
 					"tech": tech,
 					"techCostMultiplier": state.production.techCostMultiplier,
