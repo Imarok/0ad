@@ -57,32 +57,32 @@ g_SelectionPanels.Alert = {
 		data.button.onPress = function() {
 			switch(data.item)
 			{
-				case "raise":
-					raiseAlert();
-					break;
-				case "increase":
-					increaseAlertLevel();
-					break;
-				case "end":
-					endOfAlert();
-					break;
+			case "raise":
+				raiseAlert();
+				return;
+			case "increase":
+				increaseAlertLevel();
+				return;
+			case "end":
+				endOfAlert();
+				return;
 			}
 		};
 
 		switch(data.item)
 		{
-			case "raise":
-				data.icon.sprite = "stretched:session/icons/bell_level1.png";
-				data.button.tooltip = translate("Raise an alert!");
-				break;
-			case "increase":
-				data.icon.sprite = "stretched:session/icons/bell_level2.png";
-				data.button.tooltip = translate("Increase the alert level to protect more units");
-				break;
-			case "end":
-				data.button.tooltip = translate("End of alert.");
-				data.icon.sprite = "stretched:session/icons/bell_level0.png";
-				break;
+		case "raise":
+			data.icon.sprite = "stretched:session/icons/bell_level1.png";
+			data.button.tooltip = translate("Raise an alert!");
+			break;
+		case "increase":
+			data.icon.sprite = "stretched:session/icons/bell_level2.png";
+			data.button.tooltip = translate("Increase the alert level to protect more units");
+			break;
+		case "end":
+			data.button.tooltip = translate("End of alert.");
+			data.icon.sprite = "stretched:session/icons/bell_level0.png";
+			break;
 		}
 		data.button.enabled = controlsPlayer(data.player);
 
@@ -201,12 +201,12 @@ g_SelectionPanels.Command = {
 			{
 				info = g_EntityCommands[command].getInfo(state);
 				if (info)
+				{
+					info.name = command;
+					commands.push(info);
 					break;
+				}
 			}
-			if (!info)
-				continue;
-			info.name = command;
-			commands.push(info);
 		}
 		return commands;
 	},
@@ -225,9 +225,8 @@ g_SelectionPanels.Command = {
 
 		data.button.enabled =
 			g_IsObserver && data.item.name == "focus-rally" ||
-			controlsPlayer(data.player) &&
-				(data.item.name != "delete" ||
-				 data.unitEntStates.some(state => !isUndeletable(state)));
+			controlsPlayer(data.player) && (data.item.name != "delete" ||
+				data.unitEntStates.some(state => !isUndeletable(state)));
 
 		data.icon.sprite = "stretched:session/icons/" + data.item.icon;
 
@@ -260,12 +259,12 @@ g_SelectionPanels.AllyCommand = {
 			{
 				info = g_AllyEntityCommands[command].getInfo(state);
 				if (info)
+				{
+					info.name = command;
+					commands.push(info);
 					break;
+				}
 			}
-			if (!info)
-				continue;
-			info.name = command;
-			commands.push(info);
 		}
 		return commands;
 	},
@@ -731,7 +730,8 @@ g_SelectionPanels.Research = {
 	{
 		let ret = [];
 		if (unitEntStates.length == 1)
-			return !unitEntStates[0].production || !unitEntStates[0].production.technologies ? ret : unitEntStates[0].production.technologies.map(tech => ({
+			return !unitEntStates[0].production || !unitEntStates[0].production.technologies ? ret :
+				unitEntStates[0].production.technologies.map(tech => ({
 					"tech": tech,
 					"techCostMultiplier": unitEntStates[0].production.techCostMultiplier,
 					"researchFacilityId": unitEntStates[0].id
@@ -1091,7 +1091,7 @@ g_SelectionPanels.Upgrade = {
 		// TODO: if the units are all the same, this should probably still be possible.
 		if (unitEntStates.length > 1)
 			return false;
- 
+
 		return unitEntStates[0].upgrade && unitEntStates[0].upgrade.upgrades;
 	},
 	"setupButton" : function(data)
