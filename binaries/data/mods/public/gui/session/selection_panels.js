@@ -1090,9 +1090,8 @@ g_SelectionPanels.Upgrade = {
 	},
 	"getItems": function(unitEntStates)
 	{
-		// Interface becomes complicated with multiple units and this is meant per-entity, so prevent it if the selection has multiple units.
-		// TODO: if the units are all the same, this should probably still be possible.
-		if (unitEntStates.length > 1)
+		// Interface becomes complicated with multiple different units and this is meant per-entity, so prevent it if the selection has multiple different units.
+		if (unitEntStates.some(state => state.template != unitEntStates[0].template))
 			return false;
 
 		return unitEntStates[0].upgrade && unitEntStates[0].upgrade.upgrades;
