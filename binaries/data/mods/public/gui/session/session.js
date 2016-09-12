@@ -889,6 +889,11 @@ function updateGroups()
 		button.onpress = (function(i) { return function() { performGroup((Engine.HotkeyIsPressed("selection.add") ? "add" : "select"), i); }; })(i);
 		button.ondoublepress = (function(i) { return function() { performGroup("snap", i); }; })(i);
 		button.onpressright = (function(i) { return function() { performGroup("breakUp", i); }; })(i);
+		if ( g_Groups.groups[i].getTotalCount() > 0)
+		{
+			let icon = GetTemplateData(g_Groups.groups[i].getEntsGrouped().reduce((pre, cur) => pre.ents.length > cur.ents.length ? pre : cur).template).icon;
+			Engine.GetGUIObjectByName("unitGroupIcon[" + i + "]").sprite = icon ? ("stretched:session/portraits/" + icon) : "groupsIcon";
+		}
 		setPanelObjectPosition(button, i, 1);
 	}
 }
