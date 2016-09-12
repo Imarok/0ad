@@ -875,6 +875,17 @@ function displayHeroes()
 		setPanelObjectPosition(heroButton, displayIndex, buttons.length);
 	}
 }
+function getCostSum(group)
+{
+	let cost = GetTemplateData(group.template).cost;
+	return Object.keys(cost).map(key => cost[key]).reduce((sum, cur) => sum + cur);
+}
+function sortSelection(pre,cur)
+{
+	if (pre.ents.length == cur.ents.length)
+		return getCostSum(pre) > getCostSum(cur) ? pre : cur;
+	return pre.ents.length > cur.ents.length ? pre : cur;
+}
 
 function updateGroups()
 {
@@ -891,7 +902,7 @@ function updateGroups()
 		button.onpressright = (function(i) { return function() { performGroup("breakUp", i); }; })(i);
 		if ( g_Groups.groups[i].getTotalCount() > 0)
 		{
-			let icon = GetTemplateData(g_Groups.groups[i].getEntsGrouped().reduce((pre, cur) => pre.ents.length > cur.ents.length ? pre : cur).template).icon;
+			let icon = GetTemplateData(g_Groups.groups[i].getEntsGrouped().reduce(sortSelection).template).icon;
 			Engine.GetGUIObjectByName("unitGroupIcon[" + i + "]").sprite = icon ? ("stretched:session/portraits/" + icon) : "groupsIcon";
 		}
 		setPanelObjectPosition(button, i, 1);
