@@ -196,10 +196,9 @@ g_SelectionPanels.Command = {
 
 		for (let command in g_EntityCommands)
 		{
-			let info;
 			for (let state of unitEntStates)
 			{
-				info = g_EntityCommands[command].getInfo(state);
+				let info = g_EntityCommands[command].getInfo(state);
 				if (info)
 				{
 					info.name = command;
@@ -254,10 +253,9 @@ g_SelectionPanels.AllyCommand = {
 		let commands = [];
 		for (let command in g_AllyEntityCommands)
 		{
-			let info;
 			for (let state of unitEntStates)
 			{
-				info = g_AllyEntityCommands[command].getInfo(state);
+				let info = g_AllyEntityCommands[command].getInfo(state);
 				if (info)
 				{
 					info.name = command;
