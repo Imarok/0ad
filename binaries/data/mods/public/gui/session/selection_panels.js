@@ -640,7 +640,8 @@ g_SelectionPanels.Queue = {
 	},
 	/**
 	 * Returns a list of all items in the productionqueue of the selection
-	 * The first of every entity first
+	 * The first entry of every entity's production queue will come before
+	 * the second entry of every entity's production queue
 	 */
 	"getItems": function(unitEntStates)
 	{
