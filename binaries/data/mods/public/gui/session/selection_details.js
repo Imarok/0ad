@@ -431,7 +431,7 @@ function updateSelectionDetails()
 	let detailsPanel = Engine.GetGUIObjectByName("selectionDetails");
 	let commandsPanel = Engine.GetGUIObjectByName("unitCommands");
 
-	let entStates = [];//g_Selection.toList().map(sel => GetExtendedEntityState(sel));
+	let entStates = [];
 
 	for (let sel of g_Selection.toList())
 	{
