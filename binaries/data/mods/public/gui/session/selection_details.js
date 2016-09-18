@@ -20,14 +20,14 @@ function getResourceTypeDisplayName(resourceType)
 }
 
 // Updates the health bar of garrisoned units
-function updateGarrisionHealthBar(entState, selection)
+function updateGarrisonHealthBar(entState, selection)
 {
 	if (!entState.garrisonHolder)
 		return;
 
 	// Summing up the Health of every single unit
-	let totalGarrisionHealth = 0;
-	let maxGarrisionHealth = 0;
+	let totalGarrisonHealth = 0;
+	let maxGarrisonHealth = 0;
 	for (let selEnt of selection)
 	{
 		let selEntState = GetEntityState(selEnt);
@@ -35,24 +35,24 @@ function updateGarrisionHealthBar(entState, selection)
 			for (let ent of selEntState.garrisonHolder.entities)
 			{
 				let state = GetEntityState(ent);
-				totalGarrisionHealth += state.hitpoints || 0;
-				maxGarrisionHealth += state.maxHitpoints || 0;
+				totalGarrisonHealth += state.hitpoints || 0;
+				maxGarrisonHealth += state.maxHitpoints || 0;
 			}
 	}
 
 	// Configuring the health bar
 	let healthGarrison = Engine.GetGUIObjectByName("healthGarrison");
-	healthGarrison.hidden = totalGarrisionHealth <= 0;
-	if (totalGarrisionHealth > 0)
+	healthGarrison.hidden = totalGarrisonHealth <= 0;
+	if (totalGarrisonHealth > 0)
 	{
 		let healthBarGarrison = Engine.GetGUIObjectByName("healthBarGarrison");
 		let healthSize = healthBarGarrison.size;
-		healthSize.rtop = 100-100*Math.max(0, Math.min(1, totalGarrisionHealth / maxGarrisionHealth));
+		healthSize.rtop = 100-100*Math.max(0, Math.min(1, totalGarrisonHealth / maxGarrisonHealth));
 		healthBarGarrison.size = healthSize;
 		healthGarrison.tooltip = sprintf(translate("%(label)s %(current)s / %(max)s"), {
 			"label": "[font=\"sans-bold-13\"]" + translate("Hitpoints:") + "[/font]",
-			"current": Math.ceil(totalGarrisionHealth),
-			"max": Math.ceil(maxGarrisionHealth)
+			"current": Math.ceil(totalGarrisonHealth),
+			"max": Math.ceil(maxGarrisonHealth)
 		});
 	}
 }
@@ -467,5 +467,5 @@ function updateSelectionDetails()
 
 	// Show health bar for garrisoned units if the garrison panel is visible
 	if (Engine.GetGUIObjectByName("unitGarrisonPanel") && !Engine.GetGUIObjectByName("unitGarrisonPanel").hidden)
-		updateGarrisionHealthBar(entStates[0], g_Selection.toList());
+		updateGarrisonHealthBar(entStates[0], g_Selection.toList());
 }
