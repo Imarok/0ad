@@ -1441,7 +1441,7 @@ function addResearchToQueue(entity, researchType)
 
 /**
  * Returns the number of units that will be present in a batch if the user clicks
- * the training button with shift down
+ * the training button
  */
 function getTrainingStatus(playerState, trainEntType, selection)
 {
@@ -1463,9 +1463,13 @@ function getTrainingStatus(playerState, trainEntType, selection)
 		limits = getEntityLimitAndCount(playerState, trainEntType);
 
 	// We need to calculate count after the next increment if it's possible
-	if (limits.canBeAddedCount == undefined ||
-		limits.canBeAddedCount > nextBatchTrainingCount * appropriateBuildings.length)
+	if ((limits.canBeAddedCount == undefined ||
+			limits.canBeAddedCount > nextBatchTrainingCount * appropriateBuildings.length) &&
+		Engine.HotkeyIsPressed("session.batchtrain"))
 		nextBatchTrainingCount += batchIncrementSize;
+
+	if (nextBatchTrainingCount < 1)
+		nextBatchTrainingCount = 1;
 
 	// If training limits don't allow us to train batchTrainingCount in each appropriate building
 	// train as many full batches as we can and remainer in one more building.
