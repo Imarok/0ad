@@ -1518,17 +1518,17 @@ function changePrimarySelectionGroup(templateName, deselectGroup)
 	g_Selection.makePrimarySelection(templateName, Engine.HotkeyIsPressed("session.deselectgroup") || deselectGroup);
 }
 
-function performCommand(entState, commandName)
+function performCommand(entStates, commandName)
 {
-	if (!entState)
+	if (!entStates.length)
 		return;
 
-	if (!controlsPlayer(entState.player) &&
+	if (!controlsPlayer(entStates[0].player) &&
 	    !(g_IsObserver && commandName == "focus-rally"))
 		return;
 
 	if (g_EntityCommands[commandName])
-		g_EntityCommands[commandName].execute(entState);
+		g_EntityCommands[commandName].execute(entStates);
 }
 
 function performAllyCommand(entity, commandName)
