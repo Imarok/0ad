@@ -5121,8 +5121,6 @@ UnitAI.prototype.Attack = function(target, queued, allowCapture)
 		// Instead we just let them get into healing range.
 		if (this.IsHealer())
 			this.MoveToTargetRange(target, IID_Heal);
-		else
-			this.WalkToTarget(target, queued);
 		return;
 	}
 	this.AddOrder("Attack", { "target": target, "force": true, "allowCapture": allowCapture}, queued);
@@ -5135,12 +5133,8 @@ UnitAI.prototype.Garrison = function(target, queued)
 {
 	if (target == this.entity)
 		return;
-	if (!this.CanGarrison(target))
-	{
-		this.WalkToTarget(target, queued);
-		return;
-	}
-	this.AddOrder("Garrison", { "target": target, "force": true }, queued);
+	if (this.CanGarrison(target))
+		this.AddOrder("Garrison", { "target": target, "force": true }, queued);
 };
 
 /**
@@ -5176,10 +5170,7 @@ UnitAI.prototype.Gather = function(target, queued)
 UnitAI.prototype.PerformGather = function(target, queued, force)
 {
 	if (!this.CanGather(target))
-	{
-		this.WalkToTarget(target, queued);
 		return;
-	}
 
 	// Save the resource type now, so if the resource gets destroyed
 	// before we process the order then we still know what resource
@@ -5231,13 +5222,8 @@ UnitAI.prototype.GatherNearPosition = function(x, z, type, template, queued)
  */
 UnitAI.prototype.Heal = function(target, queued)
 {
-	if (!this.CanHeal(target))
-	{
-		this.WalkToTarget(target, queued);
-		return;
-	}
-
-	this.AddOrder("Heal", { "target": target, "force": true }, queued);
+	if (this.CanHeal(target))
+		this.AddOrder("Heal", { "target": target, "force": true }, queued);
 };
 
 /**
@@ -5245,13 +5231,8 @@ UnitAI.prototype.Heal = function(target, queued)
  */
 UnitAI.prototype.ReturnResource = function(target, queued)
 {
-	if (!this.CanReturnResource(target, true))
-	{
-		this.WalkToTarget(target, queued);
-		return;
-	}
-
-	this.AddOrder("ReturnResource", { "target": target, "force": true }, queued);
+	if (this.CanReturnResource(target, true))
+		this.AddOrder("ReturnResource", { "target": target, "force": true }, queued);
 };
 
 /**
@@ -5400,13 +5381,8 @@ UnitAI.prototype.StopTrading = function()
  */
 UnitAI.prototype.Repair = function(target, autocontinue, queued)
 {
-	if (!this.CanRepair(target))
-	{
-		this.WalkToTarget(target, queued);
-		return;
-	}
-
-	this.AddOrder("Repair", { "target": target, "autocontinue": autocontinue, "force": true }, queued);
+	if (this.CanRepair(target))
+		this.AddOrder("Repair", { "target": target, "autocontinue": autocontinue, "force": true }, queued);
 };
 
 /**
