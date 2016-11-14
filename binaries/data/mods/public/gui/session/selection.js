@@ -140,12 +140,11 @@ EntityGroups.prototype.getEntsGrouped = function()
 	var templateNames = this.getTemplateNames();
 	var list = [];
 	for (var t of templateNames)
-	{
 		list.push({
 			"ents": this.getEntsByName(t),
 			"template": t,
 		});
-	}
+
 	return list;
 };
 
@@ -186,14 +185,11 @@ function EntitySelection()
  */
 EntitySelection.prototype.makePrimarySelection = function(templateName, modifierKey)
 {
-	var template = GetTemplateData(templateName);
-	var key = template.selectionGroupName || templateName;
-
-	var ents = [];
+	let ents = [];
 	if (modifierKey)
-		ents = this.groups.getEntsByNameInverse(key);
+		ents = this.groups.getEntsByNameInverse(templateName);
 	else
-		ents = this.groups.getEntsByName(key);
+		ents = this.groups.getEntsByName(templateName);
 
 	this.reset();
 	this.addList(ents);
