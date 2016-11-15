@@ -1028,13 +1028,13 @@ var g_EntityCommands =
 	"unload-all": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(entState => !entState.garrisonHolder))
-				return false;
-
 			let count = 0;
-			for (let state of entStates)
-				if (state.garrisonHolder)
-					count += state.garrisonHolder.entities.length;
+			for (let entState of entStates)
+				if (entState.garrisonHolder)
+					count += entState.garrisonHolder.entities.length;
+
+			if (!count)
+				return false;
 
 			return {
 				"tooltip": colorizeHotkey("%(hotkey)s" + " ", "session.unload") +
@@ -1051,12 +1051,7 @@ var g_EntityCommands =
 	"delete": {
 		"getInfo": function(entStates)
 		{
-			let deleteReason = entStates.filter(state => isUndeletable(state))[0]; //Does this work?
-			return deleteReason ?
-				{
-					"tooltip": deleteReason,
-					"icon": "kill_small_disabled.png"
-				} :
+			return entStates.some(entState => !isUndeletable(entState)) ?
 				{
 					"tooltip":
 						colorizeHotkey("%(hotkey)s" + " ", "session.kill") +
@@ -1066,26 +1061,34 @@ var g_EntityCommands =
 							"session.noconfirmation"
 						),
 					"icon": "kill_small.png"
+				} :
+				{
+					// Get all delete reasons and remove duplications
+					"tooltip": entStates.map(entState => isUndeletable(entState))
+						.filter((reason, pos, self) =>
+							self.indexOf(reason) == pos && reason
+						).join("\n"),
+					"icon": "kill_small_disabled.png"
 				};
 		},
 		"execute": function(entStates)
 		{
-			if (!entStates.length || entStates.some(state => isUndeletable(state)))
+			if (!entStates.length || entStates.every(entState => isUndeletable(entState)))
 				return;
 
 			if (Engine.HotkeyIsPressed("session.noconfirmation"))
 				Engine.PostNetworkCommand({
 					"type": "delete-entities",
-					"entities": entStates.map(state => state.id)
+					"entities": entStates.map(entState => entState.id)
 				});
 			else
-				openDeleteDialog(entStates.map(state => state.id));
+				openDeleteDialog(entStates.map(entState => entState.id));
 		},
 	},
 	"stop": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.unitAI))
+			if (entStates.every(entState => !entState.unitAI))
 				return false;
 
 			return {
@@ -1097,14 +1100,14 @@ var g_EntityCommands =
 		"execute": function(entStates)
 		{
 			if (entStates.length)
-				stopUnits(entStates.map(state => state.id));
+				stopUnits(entStates.map(entState => entState.id));
 		},
 	},
 
 	"garrison": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.unitAI || state.turretParent))
+			if (entStates.every(entState => !entState.unitAI || entState.turretParent))
 				return false;
 
 			return {
@@ -1123,12 +1126,12 @@ var g_EntityCommands =
 	"unload": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.unitAI || !state.turretParent))
+			if (entStates.every(entState => !entState.unitAI || !entState.turretParent))
 				return false;
 
-			if (entStates.every(state => {
-				let p = GetEntityState(state.turretParent);
-				return !p || !p.garrisonHolder ||  p.garrisonHolder.entities.indexOf(state.id) == -1;
+			if (entStates.every(entState => {
+				let p = GetEntityState(entState.turretParent);
+				return !p || !p.garrisonHolder ||  p.garrisonHolder.entities.indexOf(entState.id) == -1;
 			}))
 				return false;
 
@@ -1146,7 +1149,7 @@ var g_EntityCommands =
 	"repair": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.builder))
+			if (entStates.every(entState => !entState.builder))
 				return false;
 
 			return {
@@ -1165,7 +1168,7 @@ var g_EntityCommands =
 	"focus-rally": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.rallyPoint))
+			if (entStates.every(entState => !entState.rallyPoint))
 				return false;
 
 			return {
@@ -1176,7 +1179,7 @@ var g_EntityCommands =
 		},
 		"execute": function(entStates)
 		{
-			let entState = entStates.filter(state => state.rallyPoint)[0] || entStates[0];
+			let entState = entStates.filter(entState => entState.rallyPoint)[0] || entStates[0];
 			let focusTarget;
 			if (entState.rallyPoint && entState.rallyPoint.position)
 				focusTarget = entState.rallyPoint.position;
@@ -1191,7 +1194,7 @@ var g_EntityCommands =
 	"back-to-work": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.unitAI || !state.unitAI.hasWorkOrders))
+			if (entStates.every(entState => !entState.unitAI || !entState.unitAI.hasWorkOrders))
 				return false;
 
 			return {
@@ -1209,8 +1212,8 @@ var g_EntityCommands =
 	"add-guard": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state =>
-				!state.unitAI || !state.unitAI.canGuard || state.unitAI.isGuarding))
+			if (entStates.every(entState =>
+				!entState.unitAI || !entState.unitAI.canGuard || entState.unitAI.isGuarding))
 				return false;
 
 			return {
@@ -1229,7 +1232,7 @@ var g_EntityCommands =
 	"remove-guard": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.unitAI || !state.unitAI.isGuarding))
+			if (entStates.every(entState => !entState.unitAI || !entState.unitAI.isGuarding))
 				return false;
 
 			return {
@@ -1246,7 +1249,7 @@ var g_EntityCommands =
 	"select-trading-goods": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.market))
+			if (entStates.every(entState => !entState.market))
 				return false;
 
 			return {
@@ -1263,7 +1266,7 @@ var g_EntityCommands =
 	"patrol": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state => !state.unitAI))
+			if (entStates.every(entState => !entState.unitAI))
 				return false;
 			return {
 				"tooltip": colorizeHotkey("%(hotkey)s" + " ", "session.patrol") +
@@ -1282,8 +1285,8 @@ var g_EntityCommands =
 	"share-dropsite": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(state =>
-				!state.resourceDropsite || !state.resourceDropsite.sharable))
+			if (entStates.every(entState =>
+				!entState.resourceDropsite || !entState.resourceDropsite.sharable))
 				return false;
 
 			let playerState = GetSimState().players[entStates[0].player];
@@ -1305,7 +1308,7 @@ var g_EntityCommands =
 		{
 			Engine.PostNetworkCommand({
 				"type": "set-dropsite-sharing",
-				"entities": entStates.map(state => state.id),
+				"entities": entStates.map(entState => entState.id),
 				"shared": !entStates[0].resourceDropsite.shared
 			});
 		},
