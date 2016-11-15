@@ -1130,8 +1130,8 @@ var g_EntityCommands =
 				return false;
 
 			if (entStates.every(entState => {
-				let p = GetEntityState(entState.turretParent);
-				return !p || !p.garrisonHolder ||  p.garrisonHolder.entities.indexOf(entState.id) == -1;
+				let parent = GetEntityState(entState.turretParent);
+				return !p || !parent.garrisonHolder || parent.garrisonHolder.entities.indexOf(entState.id) == -1;
 			}))
 				return false;
 
@@ -1285,31 +1285,33 @@ var g_EntityCommands =
 	"share-dropsite": {
 		"getInfo": function(entStates)
 		{
-			if (entStates.every(entState =>
-				!entState.resourceDropsite || !entState.resourceDropsite.sharable))
+			let sharableEntities = entStates.filter(
+					entState => entState.resourceDropsite && entState.resourceDropsite.sharable);
+			if (!sharableEntities.length)
 				return false;
 
 			let playerState = GetSimState().players[entStates[0].player];
 			if (!playerState.isMutualAlly.some((e, i) => e && i != entStates[0].player))
 				return false;
 
-			if (entStates[0].resourceDropsite.shared)
-				return {
+			return sharableEntities.some(entState => !entState.resourceDropsite.shared) ?
+				{
+					"tooltip": translate("Press to allow allies to use this dropsite"),
+					"icon": "locked_small.png"
+				} :
+				{
 					"tooltip": translate("Press to prevent allies from using this dropsite"),
 					"icon": "unlocked_small.png"
 				};
-
-			return {
-				"tooltip": translate("Press to allow allies to use this dropsite"),
-				"icon": "locked_small.png"
-			};
 		},
 		"execute": function(entStates)
 		{
+			let sharableEntities = entStates.filter(
+				entState => entState.resourceDropsite && entState.resourceDropsite.sharable);
 			Engine.PostNetworkCommand({
 				"type": "set-dropsite-sharing",
-				"entities": entStates.map(entState => entState.id),
-				"shared": !entStates[0].resourceDropsite.shared
+				"entities": sharableEntities.map(entState => entState.id),
+				"shared": sharableEntities.some(entState => !entState.resourceDropsite.shared)
 			});
 		},
 	}
