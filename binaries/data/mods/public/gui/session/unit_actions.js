@@ -1268,6 +1268,7 @@ var g_EntityCommands =
 		{
 			if (entStates.every(entState => !entState.unitAI))
 				return false;
+
 			return {
 				"tooltip": colorizeHotkey("%(hotkey)s" + " ", "session.patrol") +
 				           translate("Patrol") + "\n" +
@@ -1286,7 +1287,7 @@ var g_EntityCommands =
 		"getInfo": function(entStates)
 		{
 			let sharableEntities = entStates.filter(
-					entState => entState.resourceDropsite && entState.resourceDropsite.sharable);
+				entState => entState.resourceDropsite && entState.resourceDropsite.sharable);
 			if (!sharableEntities.length)
 				return false;
 
