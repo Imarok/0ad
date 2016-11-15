@@ -1131,7 +1131,7 @@ var g_EntityCommands =
 
 			if (entStates.every(entState => {
 				let parent = GetEntityState(entState.turretParent);
-				return !p || !parent.garrisonHolder || parent.garrisonHolder.entities.indexOf(entState.id) == -1;
+				return !parent || !parent.garrisonHolder || parent.garrisonHolder.entities.indexOf(entState.id) == -1;
 			}))
 				return false;
 
