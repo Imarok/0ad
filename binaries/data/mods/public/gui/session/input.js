@@ -1018,6 +1018,11 @@ function handleInputAfterGui(ev)
 						templateToMatch = GetEntityState(selectedEntity).template;
 					}
 
+					// Remove the player prefix (e.g. "p3&")
+					let index = templateToMatch.indexOf("&");
+					if (index != -1)
+						templateToMatch = templateToMatch.slice(index+1);
+
 					// TODO: Should we handle "control all units" here as well?
 					ents = Engine.PickSimilarPlayerEntities(templateToMatch, showOffscreen, matchRank, false);
 				}
