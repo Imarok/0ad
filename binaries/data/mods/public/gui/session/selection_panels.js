@@ -949,7 +949,7 @@ g_SelectionPanels.Selection = {
 				"playername": g_Players[unitOwner].name
 			});
 		data.button.tooltip = tooltip;
-		data.button.sprite = g_IsObserver ? "color:" + rgbToGuiColor(g_Players[unitOwner].color) + ":" : "snIconPortrait";
+		data.guiSelection.sprite = "color:" + (g_IsObserver ? rgbToGuiColor(g_Players[unitOwner].color) + " 120": "0 0 0 0");
 
 		data.countDisplay.caption = data.item.ents.length || "";
 
