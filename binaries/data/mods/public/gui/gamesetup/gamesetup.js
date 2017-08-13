@@ -29,6 +29,8 @@ var g_PlayerAssignmentColors = {
 	"unassigned": "140 140 140",
 	"AI": "70 150 70"
 };
+// for testing
+var g_randomlySelectedMap;
 
 /**
  * Used for highlighting the sender of chat messages.
@@ -330,6 +332,8 @@ var g_LastGameStanza;
  */
 var g_LastViewedAIPlayer = -1;
 
+var g_PlayerSettings = {};
+
 /**
  * Total number of units that the engine can run with smoothly.
  * It means a 4v4 with 150 population can still run nicely, but more than that might "lag".
@@ -419,8 +423,8 @@ var g_Dropdowns = {
 		"labels": () => g_MapTypes.Title,
 		"ids": () => g_MapTypes.Name,
 		"default": () => g_MapTypes.Default,
-		"defined": () => g_GameAttributes.mapType !== undefined,
-		"get": () => g_GameAttributes.mapType,
+		"defined": () => getSetting("mapType") !== undefined,
+		"get": () => getSetting("mapType"),
 		"select": (idx) => {
 			g_MapData = {};
 			g_GameAttributes.mapType = g_MapTypes.Name[idx];
@@ -435,6 +439,10 @@ var g_Dropdowns = {
 			reloadMapFilterList();
 		},
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.mapType = getSetting("mapType");
+			gameAttribs.mapPath = g_MapPath[gameAttribs.mapType];
+		}
 	},
 	"mapFilter": {
 		"title": () => translate("Map Filter"),
@@ -450,6 +458,9 @@ var g_Dropdowns = {
 			reloadMapList();
 		},
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.mapFilter = getSetting("mapFilter");
+		}
 	},
 	"mapSelection": {
 		"title": () => translate("Select Map"),
@@ -464,6 +475,30 @@ var g_Dropdowns = {
 			selectMap(g_MapSelectionList.file[idx]);
 		},
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs) => {
+			let selectedMap = getSetting("mapSelection");
+			gameAttribs.map = selectedMap == "random" ? g_randomlySelectedMap :
+				selectedMap;
+			let mapData = loadMapData(gameAttribs.map);
+			let mapSettings = mapData && mapData.settings ? deepcopy(mapData.settings) : {};
+	
+			// Reset victory conditions
+			if (gameAttribs.mapType != "random")
+			{
+				let victoryIdx = g_VictoryConditions.Name.indexOf(mapSettings.GameType || "") != -1 ? g_VictoryConditions.Name.indexOf(mapSettings.GameType) : g_VictoryConditions.Default;
+				gameAttribs.settings.GameType = g_VictoryConditions.Name[victoryIdx];
+				gameAttribs.settings.VictoryScripts = g_VictoryConditions.Scripts[victoryIdx];
+			}
+
+			
+			if (mapSettings.PlayerData)
+				sanitizePlayerData(mapSettings.PlayerData);
+			warn("PlayerData: " + uneval(mapSettings.PlayerData));
+
+			gameAttribs.script = mapSettings.Script;
+			for (let prop in mapSettings)
+				gameAttribs.settings[prop] = mapSettings[prop];
+		}
 	},
 	"mapSize": {
 		"title": () => translate("Map Size"),
@@ -478,6 +513,9 @@ var g_Dropdowns = {
 		},
 		"hidden": () => g_GameAttributes.mapType != "random",
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.Size = getSetting("mapSize");
+		}
 	},
 	"numPlayers": {
 		"title": () => translate("Number of Players"),
@@ -524,6 +562,9 @@ var g_Dropdowns = {
 			g_GameAttributes.settings.PopulationCap = g_PopulationCapacities.Population[idx];
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.PopulationCap = getSetting("populationCap");
+		}
 	},
 	"startingResources": {
 		"title": () => translate("Starting Resources"),
@@ -544,6 +585,9 @@ var g_Dropdowns = {
 		},
 		"hidden": () => g_GameAttributes.mapType == "scenario",
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.StartingResources = getSetting("startingResources");
+		}
 	},
 	"ceasefire": {
 		"title": () => translate("Ceasefire"),
@@ -557,6 +601,9 @@ var g_Dropdowns = {
 			g_GameAttributes.settings.Ceasefire = g_Ceasefire.Duration[idx];
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.Ceasefire = getSetting("ceasefire");
+		}
 	},
 	"victoryCondition": {
 		"title": () => translate("Victory Condition"),
@@ -572,6 +619,10 @@ var g_Dropdowns = {
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.GameType = getSetting("victoryCondition");
+			gameAttribs.settings.VictoryScripts = g_VictoryConditions.Scripts[g_VictoryConditions.Name.indexOf(getSetting("victoryCondition"))];
+		}
 	},
 	"relicCount": {
 		"title": () => translate("Relic Count"),
@@ -586,6 +637,9 @@ var g_Dropdowns = {
 		},
 		"hidden": () => g_GameAttributes.settings.GameType != "capture_the_relic",
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.RelicCount = getSetting("relicCount");
+		}
 	},
 	"victoryDuration": {
 		"title": () => translate("Victory Duration"),
@@ -602,6 +656,9 @@ var g_Dropdowns = {
 			g_GameAttributes.settings.GameType != "wonder" &&
 			g_GameAttributes.settings.GameType != "capture_the_relic",
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.VictoryDuration = getSetting("victoryDuration");
+		}
 	},
 	"gameSpeed": {
 		"title": () => translate("Game Speed"),
@@ -614,6 +671,9 @@ var g_Dropdowns = {
 		"select": (idx) => {
 			g_GameAttributes.gameSpeed = g_GameSpeeds.Speed[idx];
 		},
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.gameSpeed = getSetting("gameSpeed");
+		}
 	},
 };
 
@@ -655,6 +715,14 @@ var g_PlayerDropdowns = {
 				swapPlayers(choice.substr("guid:".length), idx);
 		},
 		"autocomplete": 100,
+		"toGameAttribs": (gameAttribs, idx) => {
+			if (!gameAttribs.settings.PlayerData[idx])
+				gameAttribs.settings.PlayerData[idx] = {};
+			let choice = getSetting("playerAssignment", idx);
+			gameAttribs.settings.PlayerData[idx].AI = choice.startsWith("ai:") ? choice.substr(3) : "";
+			if (g_PlayerSettings[idx])
+				gameAttribs.settings.PlayerData[idx].AIDiff = g_PlayerSettings[idx].AIDiff;
+		}
 	},
 	"playerTeam": {
 		"labels": (idx) => g_PlayerTeamList.label,
@@ -666,6 +734,11 @@ var g_PlayerDropdowns = {
 			g_GameAttributes.settings.PlayerData[idx].Team = selectedIdx - 1;
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs, idx) => {
+			if (!gameAttribs.settings.PlayerData[idx])
+				gameAttribs.settings.PlayerData[idx] = {};
+			gameAttribs.settings.PlayerData[idx].Team = getSetting("playerTeam", idx);
+		}
 	},
 	"playerCiv": {
 		"tooltip": (hoverIdx, idx) => g_PlayerCivList.tooltip[hoverIdx] || translate("Chose the civilization for this player"),
@@ -680,6 +753,11 @@ var g_PlayerDropdowns = {
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
 		"autocomplete": 0,
+		"toGameAttribs": (gameAttribs, idx) => {
+			if (!gameAttribs.settings.PlayerData[idx])
+				gameAttribs.settings.PlayerData[idx] = {};
+			gameAttribs.settings.PlayerData[idx].Civ = getSetting("playerCiv", idx);
+		}
 	},
 	"playerColorPicker": {
 		"labels": (idx) => g_PlayerColorPickerList.map(color => "■"),
@@ -687,7 +765,7 @@ var g_PlayerDropdowns = {
 		"ids": (idx) => g_PlayerColorPickerList.map((color, index) => index),
 		"default": (idx) => idx,
 		"defined": (idx) => g_GameAttributes.settings.PlayerData[idx].Color !== undefined,
-		"get": (idx) => g_GameAttributes.settings.PlayerData[idx].Color,
+		"get": (idx) => g_PlayerColorPickerList.indexOf(g_GameAttributes.settings.PlayerData[idx].Color),
 		"select": (selectedIdx, idx) => {
 			let playerData = g_GameAttributes.settings.PlayerData;
 
@@ -700,6 +778,12 @@ var g_PlayerDropdowns = {
 			ensureUniquePlayerColors(playerData);
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs, idx) => {
+			if (!gameAttribs.settings.PlayerData[idx])
+				gameAttribs.settings.PlayerData[idx] = {};
+			if (g_PlayerColorPickerList[getSetting("playerColorPicker", idx)])
+				gameAttribs.settings.PlayerData[idx].Color = g_PlayerColorPickerList[getSetting("playerColorPicker", idx)];
+		}
 	},
 };
 
@@ -718,6 +802,9 @@ var g_Checkboxes = {
 		},
 		"hidden": () => g_GameAttributes.settings.GameType != "regicide",
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.RegicideGarrison = getSetting("regicideGarrison");
+		}
 	},
 	"revealMap": {
 		"title": () =>
@@ -736,6 +823,9 @@ var g_Checkboxes = {
 				g_Checkboxes.exploreMap.set(true);
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.RevealMap = getSetting("revealMap");
+		}
 	},
 	"exploreMap": {
 		"title":
@@ -751,6 +841,9 @@ var g_Checkboxes = {
 			g_GameAttributes.settings.ExploreMap = checked;
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario" && !g_GameAttributes.settings.RevealMap,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.ExploreMap = getSetting("exploreMap");
+		}
 	},
 	"disableTreasures": {
 		"title": () => translate("Disable Treasures"),
@@ -762,6 +855,9 @@ var g_Checkboxes = {
 			g_GameAttributes.settings.DisableTreasures = checked;
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.DisableTreasures = getSetting("disableTreasures");
+		}
 	},
 	"disableSpies": {
 		"title": () => translate("Disable Spies"),
@@ -773,6 +869,9 @@ var g_Checkboxes = {
 			g_GameAttributes.settings.DisableSpies = checked;
 		},
 		"enabled": () => g_GameAttributes.mapType != "scenario",
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.DisableSpies = getSetting("disableSpies");
+		}
 	},
 	"lockTeams": {
 		"title": () => translate("Teams Locked"),
@@ -787,6 +886,9 @@ var g_Checkboxes = {
 		"enabled": () =>
 			g_GameAttributes.mapType != "scenario" &&
 			!g_GameAttributes.settings.RatingEnabled,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.LockTeams = getSetting("lockTeams");
+		}
 	},
 	"lastManStanding": {
 		"title": () => translate("Last Man Standing"),
@@ -800,6 +902,9 @@ var g_Checkboxes = {
 		"enabled": () =>
 			g_GameAttributes.mapType != "scenario" &&
 			!g_GameAttributes.settings.LockTeams,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.LastManStanding = !getSetting("lockTeams") && getSetting("lastManStanding");
+		}
 	},
 	"enableCheats": {
 		"title": () => translate("Cheats"),
@@ -813,6 +918,9 @@ var g_Checkboxes = {
 				checked && !g_GameAttributes.settings.RatingEnabled;
 		},
 		"enabled": () => !g_GameAttributes.settings.RatingEnabled,
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.CheatsEnabled = getSetting("enableCheats");
+		}
 	},
 	"enableRating": {
 		"title": () => translate("Rated Game"),
@@ -830,6 +938,9 @@ var g_Checkboxes = {
 				g_Checkboxes.enableCheats.set(false);
 			}
 		},
+		"toGameAttribs": (gameAttribs) => {
+			gameAttribs.settings.RatingEnabled = getSetting("enableRating");
+		}
 	},
 };
 
@@ -981,6 +1092,14 @@ function initDefaults()
 		g_DefaultPlayerData[i].Civ = "random";
 		g_DefaultPlayerData[i].Team = -1;
 	}
+
+	for (let i in g_DefaultPlayerData)
+	{
+		g_PlayerSettings[i] = {};
+		g_PlayerSettings[i].AIDiff = g_DefaultPlayerData[i].AIDiff;
+		g_PlayerSettings[i].AI = g_DefaultPlayerData[i].AI;
+		g_PlayerSettings[i].Name = g_DefaultPlayerData[i].Name;
+	}
 }
 
 /**
@@ -1056,16 +1175,34 @@ function getGUIObjectNameFromSetting(name)
 		{
 			let idx = g_OptionOrderGUI[panel][type].indexOf(name);
 			if (idx != -1)
-				return [panel + "Option" + type, "[" + idx + "]"];
+				return [panel + "Option" + type, "[" + idx + "]", type];
 		}
+
+	if (g_PlayerDropdowns[name] !== undefined)
+		return [name, "", "PlayerDropdown"];
 
 	// Assume there is a GUI object with exactly that setting name
 	return [name, ""];
 }
 
+function getSetting(name, idx)
+{
+	let [guiName, guiIdx, type] = getGUIObjectNameFromSetting(name);
+	let idxName = idx === undefined ? "": "[" + idx + "]";
+	let guiObj = Engine.GetGUIObjectByName(guiName + guiIdx + idxName);
+
+	if (type == "Dropdown")
+		return guiObj.list_data[guiObj.selected];
+	if (type == "Checkbox")
+		return guiObj.checked;
+	if (type == "PlayerDropdown")
+		return guiObj.list_data[guiObj.selected];
+	warn("unknown setting type " + type + " for setting " + name + "!");
+}
+
 function initDropdown(name, idx)
 {
-	let [guiName, guiIdx] = getGUIObjectNameFromSetting(name);
+	let [guiName, guiIdx, type] = getGUIObjectNameFromSetting(name);
 	let idxName = idx === undefined ? "": "[" + idx + "]";
 	let data = (idx === undefined ? g_Dropdowns : g_PlayerDropdowns)[name];
 
@@ -1107,7 +1244,7 @@ function initPlayerDropdowns(name)
 
 function initCheckbox(name)
 {
-	let [guiName, guiIdx] = getGUIObjectNameFromSetting(name);
+	let [guiName, guiIdx, type] = getGUIObjectNameFromSetting(name);
 	Engine.GetGUIObjectByName(guiName + guiIdx).onPress = function() {
 
 		let obj = g_Checkboxes[name];
@@ -1639,7 +1776,7 @@ function selectMap(name)
 {
 	// Reset some map specific properties which are not necessarily redefined on each map
 	for (let prop of ["TriggerScripts", "CircularMap", "Garrison", "DisabledTemplates"])
-		g_GameAttributes.settings[prop] = undefined;
+		delete g_GameAttributes.settings[prop];
 
 	let mapData = loadMapData(name);
 	let mapSettings = mapData && mapData.settings ? deepcopy(mapData.settings) : {};
@@ -1683,7 +1820,7 @@ function isControlArrayElementHidden(idx)
  */
 function updateGUIDropdown(name, idx = undefined)
 {
-	let [guiName, guiIdx] = getGUIObjectNameFromSetting(name);
+	let [guiName, guiIdx, type] = getGUIObjectNameFromSetting(name);
 	let idxName = idx === undefined ? "": "[" + idx + "]";
 
 	let dropdown = Engine.GetGUIObjectByName(guiName + guiIdx + idxName);
@@ -1727,7 +1864,7 @@ function updateGUICheckbox(name)
 	let hidden = obj.hidden && obj.hidden();
 	let enabled = !obj.enabled || obj.enabled();
 
-	let [guiName, guiIdx] = getGUIObjectNameFromSetting(name);
+	let [guiName, guiIdx, type] = getGUIObjectNameFromSetting(name);
 	let checkbox = Engine.GetGUIObjectByName(guiName + guiIdx);
 	let label = Engine.GetGUIObjectByName(guiName + "Text" + guiIdx);
 	let frame = Engine.GetGUIObjectByName(guiName + "Frame" + guiIdx);
@@ -1780,15 +1917,108 @@ function launchGame()
 
 	savePersistMatchSettings();
 
+	g_randomlySelectedMap = pickRandom(g_Dropdowns.mapSelection.ids().slice(1));
+
 	// Select random map
 	if (g_GameAttributes.map == "random")
 	{
 		let victoryScriptsSelected = g_GameAttributes.settings.VictoryScripts;
 		let gameTypeSelected = g_GameAttributes.settings.GameType;
-		selectMap(pickRandom(g_Dropdowns.mapSelection.ids().slice(1)));
+		selectMap(g_randomlySelectedMap);
 		g_GameAttributes.settings.VictoryScripts = victoryScriptsSelected;
 		g_GameAttributes.settings.GameType = gameTypeSelected;
 	}
+
+	let selectedMap = getSetting("mapSelection");
+	let gameAttribs = {"settings": {
+		"PlayerData": []
+	}};
+	
+	for (let dropdown in g_Dropdowns)
+		if (g_Dropdowns[dropdown].toGameAttribs)
+			g_Dropdowns[dropdown].toGameAttribs(gameAttribs);
+	for (let checkbox in g_Checkboxes)
+		if (g_Checkboxes[checkbox].toGameAttribs)
+			g_Checkboxes[checkbox].toGameAttribs(gameAttribs);
+	for (let dropdown in g_PlayerDropdowns)
+		for (let i = 0; i < g_GameAttributes.settings.PlayerData.length; ++i)
+			if (g_PlayerDropdowns[dropdown].defined && g_PlayerDropdowns[dropdown].toGameAttribs)
+				g_PlayerDropdowns[dropdown].toGameAttribs(gameAttribs, i);
+	
+	/*{
+		"settings": {
+			"GameType": getSetting("victoryCondition"),
+			"VictoryScripts": g_VictoryConditions.Scripts[g_VictoryConditions.Name.indexOf(getSetting("victoryCondition"))],
+		},
+		"mapType": getSetting("mapType"),
+		"map": selectedMap == "random" ? randomlySelectedMap : selectedMap,
+	};
+	
+	// from select map
+	{
+		let mapData = loadMapData(gameAttribs.map);
+		let mapSettings = mapData && mapData.settings ? deepcopy(mapData.settings) : {};
+	
+		// Reset victory conditions
+		if (gameAttribs.mapType != "random")
+		{
+			let victoryIdx = g_VictoryConditions.Name.indexOf(mapSettings.GameType || "") != -1 ? g_VictoryConditions.Name.indexOf(mapSettings.GameType) : g_VictoryConditions.Default;
+			gameAttribs.settings.GameType = g_VictoryConditions.Name[victoryIdx];
+			gameAttribs.settings.VictoryScripts = g_VictoryConditions.Scripts[victoryIdx];
+		}
+
+		/* TODO
+		if (mapSettings.PlayerData)
+			sanitizePlayerData(mapSettings.PlayerData);
+		/
+
+		gameAttribs.script = mapSettings.Script;
+		for (let prop in mapSettings)
+			gameAttribs.settings[prop] = mapSettings[prop];
+
+		// TODO unassignInvalidPlayers(g_GameAttributes.settings.PlayerData.length);
+	}*/
+
+	warn("real: " + uneval(g_GameAttributes));
+	warn("realjson: " + JSON.stringify(g_GameAttributes));
+	warn("new: " + uneval(gameAttribs));
+
+	let compareObj = function (obj1, obj2, name = "")
+	{
+		let same = true;
+		if (typeof obj1 == "object" && typeof obj2 == "object")
+		{
+			for (let i1 in obj1)
+			{
+				if (obj2[i1] === undefined)
+				{
+					warn("obj2 has no " + i1 + " in " + name);
+					same = false;
+					continue;
+				}
+				if (!compareObj(obj1[i1], obj2[i1], name + "." + i1))
+					same = false;
+			}
+			for (let i2 in obj2)
+			{
+				if (obj1[i2] === undefined)
+				{
+					warn("obj1 has no " + i2 + " in " + name);
+					same = false;
+					continue;
+				}
+				if (!compareObj(obj1[i2], obj2[i2], name + "." + i2))
+					same = false;
+			}
+			return same;
+		}
+		if (obj1 == obj2)
+			return true;
+		warn("not the same"  + " in " + name + ": " + uneval(obj1) + " vs " + uneval(obj2));
+	}
+	if (compareObj(g_GameAttributes, gameAttribs))
+		warn("same");
+
 
 	g_GameAttributes.settings.TriggerScripts = g_GameAttributes.settings.VictoryScripts.concat(g_GameAttributes.settings.TriggerScripts || []);
 
@@ -1842,6 +2072,8 @@ function launchGame()
 
 	// Used for identifying rated game reports for the lobby
 	g_GameAttributes.matchID = Engine.GetMatchID();
+
+	// TODO: g_GameAttributes.settings.VictoryScripts uneeded
 
 	if (g_IsNetworked)
 	{
@@ -2005,6 +2237,11 @@ function AIConfigCallback(ai)
 	g_GameAttributes.settings.PlayerData[ai.playerSlot].AI = ai.id;
 	g_GameAttributes.settings.PlayerData[ai.playerSlot].AIDiff = ai.difficulty;
 
+	if (!g_PlayerSettings[ai.playerSlot])
+		g_PlayerSettings[ai.playerSlot] = {};
+	g_PlayerSettings[ai.playerSlot].AI = ai.id;
+	g_PlayerSettings[ai.playerSlot].AIDiff = ai.difficulty;
+
 	updateGameAttributes();
 }
 
@@ -2063,6 +2300,12 @@ function swapPlayers(guid, newSlot)
 		// Transfer the AI from the target slot to the current slot.
 		g_GameAttributes.settings.PlayerData[playerID - 1].AI = g_GameAttributes.settings.PlayerData[newSlot].AI;
 		g_GameAttributes.settings.PlayerData[playerID - 1].AIDiff = g_GameAttributes.settings.PlayerData[newSlot].AIDiff;
+
+
+		if (!g_PlayerSettings[playerID - 1])
+			g_PlayerSettings[playerID - 1] = {};
+		g_PlayerSettings[playerID - 1].AI = g_PlayerSettings[newSlot].AI;
+		g_PlayerSettings[playerID - 1].AIDiff = g_PlayerSettings[newSlot].AIDiff;
 
 		// Swap civilizations and colors if they aren't fixed
 		if (g_GameAttributes.mapType != "scenario")
@@ -2169,7 +2412,7 @@ function showMoreOptions(show)
 }
 
 function resetCivilizations()
-{
+{warn("foo: " + getSetting("playerColorPicker", 2));
 	for (let i in g_GameAttributes.settings.PlayerData)
 		g_GameAttributes.settings.PlayerData[i].Civ = "random";
 
